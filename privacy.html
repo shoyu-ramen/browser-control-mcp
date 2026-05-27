@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — Browser Control MCP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Inter",-apple-system,sans-serif;background:#0a0a1a;color:#c8c8e0;line-height:1.8;padding:60px 24px}.wrap{max-width:720px;margin:0 auto}h1{font-size:28px;font-weight:700;color:#fff;margin-bottom:8px}.updated{font-size:13px;color:#8888aa;margin-bottom:40px}h2{font-size:18px;font-weight:600;color:#fff;margin:36px 0 12px}p{margin-bottom:14px;font-size:15px}ul{margin:0 0 14px 24px}li{font-size:15px;margin-bottom:6px}table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #1e1e3a}th{color:#fff;font-weight:600}a{color:#6366f1;text-decoration:none}a:hover{text-decoration:underline}.back{display:inline-block;margin-bottom:24px;font-size:13px;color:#8888aa}.summary-table{background:#12122a;border-radius:8px;overflow:hidden}.summary-table th{background:#1a1a2e}</style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="/" class="back">← Back to Browser Control MCP</a>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: May 27, 2026</p>
+    <h2>Overview</h2>
+    <p>Browser Control MCP ("the Extension") is a Chrome extension that enables AI coding assistants to interact with your browser via the Model Context Protocol (MCP).</p>
+    <p><strong>The short version:</strong> The Extension runs entirely on your local machine. It does not collect, transmit, or share any personal data or browsing data with any external server. All browser automation communication is strictly localhost-only.</p>
+    <h2>What Data the Extension Accesses</h2>
+    <ul><li><strong>Page content and DOM</strong></li><li><strong>Screenshots</strong></li><li><strong>Cookies</strong></li><li><strong>Network requests</strong></li><li><strong>Clipboard contents</strong></li><li><strong>Tab information</strong></li><li><strong>Form field values</strong></li></ul>
+    <h2>How Data Is Used</h2>
+    <p>All data is used for one purpose: <strong>to execute commands from your local MCP server and return results to your AI coding assistant.</strong></p>
+    <ul><li>Processed locally on your machine</li><li>Transmitted only to <code>127.0.0.1:7225</code></li><li>Never stored persistently</li></ul>
+    <h2>Network Communication</h2>
+    <h3 style="font-size:15px;color:#fff;margin:20px 0 8px">Local MCP Server</h3>
+    <ul><li><code>127.0.0.1:7225</code> (localhost only, WebSocket)</li></ul>
+    <h3 style="font-size:15px;color:#fff;margin:20px 0 8px">License Validation</h3>
+    <ul><li><code>api.lemonsqueezy.com</code> (HTTPS) — license key only, once per 24 hours</li></ul>
+    <h2>Data Storage</h2>
+    <ul><li>License key in <code>chrome.storage.sync</code></li><li>Trial start date in <code>chrome.storage.local</code></li></ul>
+    <h2>Permissions</h2>
+    <table><tr><th>Permission</th><th>Why</th></tr><tr><td>debugger</td><td>CDP for automation</td></tr><tr><td>activeTab</td><td>Access current tab</td></tr><tr><td>scripting</td><td>DOM interaction</td></tr><tr><td>tabs</td><td>Tab management</td></tr><tr><td>cookies</td><td>Cookie CRUD</td></tr><tr><td>clipboardRead/Write</td><td>Clipboard access</td></tr><tr><td>alarms</td><td>Connection health</td></tr><tr><td>offscreen</td><td>Clipboard (MV3)</td></tr><tr><td>management</td><td>Self-recovery</td></tr><tr><td>webNavigation</td><td>Page load events</td></tr><tr><td>storage</td><td>License key storage</td></tr><tr><td>&lt;all_urls&gt;</td><td>Any website</td></tr></table>
+    <h2>Contact</h2>
+    <p><a href="mailto:rosskuehl@gmail.com">rosskuehl@gmail.com</a></p>
+    <h2>Summary</h2>
+    <table class="summary-table"><tr><th>Question</th><th>Answer</th></tr><tr><td>Collects personal data?</td><td>No</td></tr><tr><td>External servers?</td><td>No (except license key to LemonSqueezy)</td></tr><tr><td>Analytics/tracking?</td><td>No</td></tr><tr><td>Browsing history?</td><td>No</td></tr><tr><td>Third parties?</td><td>No</td></tr><tr><td>Where does data go?</td><td>127.0.0.1:7225 only</td></tr></table>
+  </div>
+</body>
+</html>
