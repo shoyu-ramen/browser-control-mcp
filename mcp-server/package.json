@@ -1,0 +1,46 @@
+{
+  "name": "browser-control-mcp",
+  "version": "2.0.0",
+  "description": "MCP server that gives Claude Code full control of your Chrome browser — navigate, click, fill forms, take screenshots, monitor network requests, manage cookies, and more",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "browser-control-mcp": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "mcp",
+    "browser",
+    "chrome",
+    "automation",
+    "claude",
+    "claude-code",
+    "model-context-protocol",
+    "browser-control",
+    "web-automation",
+    "testing"
+  ],
+  "author": "Ross Kuehl <rosskuehl@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shoyu-ramen/browser-control-mcp"
+  },
+  "files": [
+    "server.js",
+    "agent-tools.js",
+    "network-tools.js",
+    "video-tools.js",
+    "messaging",
+    "package.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "ws": "^8.18.0"
+  }
+}
