@@ -8,3 +8,10 @@ dist/
 .credentials
 site/
 marketing/
+_preserve/
+
+# Internal team/process scratch — must NOT enter the public repo
+.jury/
+LAUNCH.md
+mcp-config.json
+mcp-server/.extension-id

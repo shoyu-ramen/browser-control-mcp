@@ -1,12 +1,14 @@
 # Browser Control MCP
 
-A Chrome extension + MCP server that gives Claude Code direct control of your browser. Navigate pages, fill forms, click buttons, take screenshots, monitor network traffic, manage cookies, read the clipboard, and debug visually — all from your terminal. **$9.99 one-time purchase** on the Chrome Web Store.
+A Chrome extension + MCP server that gives Claude Code direct control of your browser. Navigate pages, fill forms, click buttons, take screenshots, monitor network traffic, manage cookies, read the clipboard, and debug visually — all from your terminal. **Free to install, 7-day free trial, then a $9.99 one-time license.** No subscription.
 
 ## Installation
 
 ### 1. Chrome Extension
 
-Install **Claude Code Browser Control** from the [Chrome Web Store](https://chromewebstore.google.com) ($9.99).
+Install **Browser Control MCP** in Chrome. It runs a **7-day free trial**; after that a one-time **$9.99 license** (purchased on [our website](https://browser-control-mcp.lemonsqueezy.com) — the Chrome Web Store doesn't process payments) keeps it active.
+
+> **Chrome Web Store listing is pending review.** Until it's live, install via **Load unpacked** (see [LAUNCH.md](LAUNCH.md)): unzip the build, open `chrome://extensions`, enable Developer mode, and click **Load unpacked**. The one-click store link will be added here once approved.
 
 ### 2. MCP Server
 
@@ -46,6 +48,8 @@ Or if installed globally:
 Open Chrome and start Claude Code. The extension auto-connects to the MCP server via WebSocket on `127.0.0.1:7225`.
 
 ## Tools
+
+The server exposes **138 tools**. The most commonly used are grouped below.
 
 ### Navigation
 - `browser_navigate` — Go to a URL
@@ -108,7 +112,6 @@ Open Chrome and start Claude Code. The extension auto-connects to the MCP server
 ### Extension Management
 - `browser_status` — Check server and extension connection status
 - `browser_reload_extension` — Reload the extension and wait for reconnect
-- `browser_recover_extension` — Auto-recover a disconnected extension (restarts Chrome)
 - `browser_wait_for_extension` — Wait for extension to connect
 - `browser_open_extensions_page` — Open chrome://extensions
 - `browser_close_dialogs` — Dismiss modals, popups, and overlays
@@ -118,7 +121,7 @@ Open Chrome and start Claude Code. The extension auto-connects to the MCP server
 - Google Chrome
 - Node.js 18+
 - Claude Code (or any MCP-compatible client)
-- macOS (extension recovery features use macOS-specific APIs)
+- Works on macOS, Windows, and Linux
 
 ## Privacy
 
