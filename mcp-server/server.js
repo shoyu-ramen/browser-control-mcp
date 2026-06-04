@@ -30,6 +30,19 @@ try { extensionId = readFileSync(EXT_ID_FILE, "utf-8").trim(); } catch {}
 
 const wss = new WebSocketServer({ port: WS_PORT, host: "127.0.0.1" });
 
+wss.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    process.stderr.write(
+      `[MCP] Port ${WS_PORT} is already in use — another browser-control server is ` +
+        `likely already running. This instance will exit; the existing server keeps ` +
+        `serving the Chrome extension. (To replace it, stop the other process first.)\n`
+    );
+    process.exit(0);
+  }
+  process.stderr.write(`[MCP] WebSocket server error: ${err.message}\n`);
+  process.exit(1);
+});
+
 wss.on("connection", (socket) => {
   process.stderr.write("[MCP] Chrome extension connected\n");
   extensionSocket = socket;
