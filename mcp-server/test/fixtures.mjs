@@ -1,40 +1,30 @@
 // Canonical expectations for the clean-core build. These are the harness's
-// INDEPENDENT source of truth (derived from .jury/precedent.md #1 and
-// .jury/context.md), deliberately NOT imported from server.js — so the tests
-// fail if someone widens server.js's own allowlist/blocklist toward the
-// sensitive surface.
+// INDEPENDENT source of truth (the clean-core contract — see LAUNCH.md),
+// deliberately NOT imported from server.js — so the tests fail if someone
+// widens server.js's own allowlist/blocklist toward the sensitive surface.
 
 // The only tool-name prefixes the shipped build may expose.
 export const SAFE_PREFIXES = ["browser_", "devtools_", "keyboard_", "dev_"];
 
 // Clean-core ceiling: the live surface must NEVER grow past the locked count
-// without an explicit, attributed, findings.md-logged ruling (precedent #5).
-// Was raised 138 → 155 for the 2026-05-31 RE-LAND, then RESTORED 155 → 138 by
-// team-lead's 2026-05-31 CONTAINMENT ruling (relayed via PM): the 153 re-land is
-// treated as a freeze breach of the v1.0 launch tree — the macro WIP is
-// UNREVIEWED/insecure and isolated to /Users/ross/bc-sprint2 (branch
-// sprint-2-wip-UNREVIEWED); main is restored to the frozen clean-core 138.
+// without a deliberate, documented decision. (A 2026-05-31 re-land briefly
+// pushed this to 153 by re-adding the unreviewed macro/profile/dom-watch/extract
+// feature; it was treated as a freeze breach of the v1.0 launch tree and
+// restored to the frozen clean-core 138. Any v2.2.0 macro work belongs on an
+// isolated branch, never main.)
 export const CLEAN_CORE_MAX_TOOLS = 138;
 
 // The LOCKED safe-core count, pinned EXACTLY so any surface change fails loudly.
-// Per precedent #5, this changes ONLY via an explicit, attributed, findings.md-
-// logged ruling — never to chase the live count.
+// Change it ONLY as a deliberate, documented decision — never to chase the live
+// count. If this assertion fails, a tool was added or removed: confirm that was
+// intended before re-pinning.
 //
-// History (all 2026-05-30): 140 (LAUNCH.md, pre-strip) → 139 (removed the
-// `browser_fill_password` leaker; handoff Decision #2) → an UNATTRIBUTED edit
-// bumped this to 154 to mask a mid-gate surface expansion (reverted; that
-// incident is the origin of precedent #5) → reverted back to 139 (task #19) →
-// 138 (jury-security override-cluster ruling: 8 KEEP / 1 GATE
-// browser_override_permission / `keyboard_record` CUT as a keylogger primitive).
-// 2026-05-31: **138 → 153** — re-land ruling re-added the 15-tool macro/profile/
-// dom-watch/extract feature (then later TREATED AS A FREEZE BREACH, see next).
-// 2026-05-31 (CONTAINMENT): **153 → 138** — team-lead's containment ruling
-// (relayed via PM) RESTORED the frozen v1.0 launch tree: the 153 re-land is a
-// freeze breach of the launch build; the macro WIP is UNREVIEWED/insecure and
-// has been isolated to /Users/ross/bc-sprint2 (branch sprint-2-wip-UNREVIEWED)
-// for Sprint-2 rebuild behind jury-security G1-G5 + #33. main re-reverted to the
-// clean-core 138 (same procedure as task #19). This is the attributed, findings-
-// logged ruling precedent #5 requires — NOT a silent edit. #5/#6 re-run at 138.
+// History: 140 (pre-strip) → 139 (removed the `browser_fill_password` leaker)
+// → 138 (`keyboard_record` cut as a keylogger primitive — unsafe alongside the
+// debugger + <all_urls> permissions). A 2026-05-31 re-land briefly bumped this to
+// 153 by re-adding the unreviewed macro/profile/dom-watch/extract feature; it was
+// treated as a freeze breach and restored to 138. That feature is deferred to an
+// isolated v2.2.0 branch and must not re-enter main.
 export const EXPECTED_TOOL_COUNT = 138;
 
 // Representative names from every removed/blocked family (precedent #1). Each
