@@ -1,0 +1,17 @@
+# Railway deploy config for the Browser Control license/revenue service.
+# Zero-dependency Node service — Nixpacks detects Node from package.json `engines`.
+#
+# IMPORTANT: the event log is FILE-BACKED (lib/store.js writes JSONL under DATA_DIR).
+# Railway's container filesystem is EPHEMERAL — without a persistent volume mounted at
+# the DATA_DIR path, every redeploy/restart WIPES all recorded revenue events.
+# Create a volume (see DEPLOY.md) mounted at /data and set DATA_DIR=/data.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
