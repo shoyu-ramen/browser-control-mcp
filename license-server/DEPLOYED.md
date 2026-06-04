@@ -32,13 +32,26 @@ git. To view/rotate: Railway → service → Variables, or `railway variables`.
 - Tampered webhook (`X-Signature: deadbeef`) → **401** (HMAC fail-closed working).
 - `POST /admin/store-stats` write persisted to `/data` and read back via `/metrics`.
 
+## Webhook wired (2026-06-04)
+
+LemonSqueezy webhook **created** (id `107331`, `Settings → Webhooks`):
+- URL `https://browser-control-license-production.up.railway.app/webhooks/lemonsqueezy`
+- Signing secret matches the Railway `LEMONSQUEEZY_SIGNING_SECRET` var.
+- Events: `order_created`, `order_refunded`, `license_key_created`, `license_key_updated`.
+
+> ⚠️ **Created in TEST MODE.** The LS store shows "Test mode: these webhooks will only
+> work with test mode data" and "Your application has been received and will be
+> reviewed" — the store is **not yet approved for live payments**. LS webhooks are
+> **mode-specific**: this one fires only for **test-mode** orders. For live revenue you
+> must (1) get the store approved by LS, (2) turn off Test mode, (3) **re-create this
+> webhook in live mode** with the same URL + secret + events.
+
 ## Remaining to actually capture sales
 
-1. In **LemonSqueezy → Settings → Webhooks → Add endpoint**, set the URL to
-   `…/webhooks/lemonsqueezy` with the **same** signing secret as the Railway var, and
-   subscribe to `order_created`, `order_refunded`, `license_key_created`,
-   `license_key_updated`.
-2. Re-verify the LS payload field names in `lib/lemonsqueezy.js` against current LS docs
-   before real traffic.
-3. Then run the sell path (`../.jury/activate-revenue.md`): G9 → confirm LS live → one
-   real $9.99 purchase → the order lands here and `/dashboard` shows it.
+1. **Verify the pipeline with a test-mode purchase** → confirm the order appears at
+   `/metrics` and `/dashboard`. If the amount lands as `0` or is missing, adjust the
+   field mapping in `lib/lemonsqueezy.js` (re-verify against current LS webhook docs).
+2. **Go live (gated on LS):** store approved → Test mode off → re-create the webhook in
+   live mode (see warning above).
+3. Run the sell path (`../.jury/activate-revenue.md`): G9 → confirm LS live → one real
+   $9.99 purchase → order lands here and `/dashboard` shows it.
