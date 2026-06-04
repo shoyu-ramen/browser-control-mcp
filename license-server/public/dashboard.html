@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Browser Control — Revenue</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0e1116; --card:#171b22; --line:#262c36; --fg:#e6edf3; --muted:#8b949e; --good:#3fb950; --warn:#d29922; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+    header { padding:24px 28px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:14px; }
+    h1 { font-size:18px; margin:0; font-weight:600; }
+    .sub { color:var(--muted); font-size:13px; }
+    main { padding:24px 28px; max-width:1000px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+    .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+    .value { font-size:26px; font-weight:650; margin-top:6px; }
+    .note { color:var(--muted); font-size:12px; margin-top:6px; }
+    .foot { color:var(--muted); font-size:12px; margin-top:22px; }
+    .err { background:#2d1416; border:1px solid #6e2a2e; color:#ffb4b4; padding:12px 14px; border-radius:8px; }
+    a { color:#58a6ff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Browser Control — Revenue</h1>
+    <span class="sub">billing-side · traceable funnel · no user data</span>
+  </header>
+  <main id="root"><p class="sub">Loading…</p></main>
+  <script>
+    const fmtMoney = (cents, cur) => new Intl.NumberFormat(undefined, { style:"currency", currency: cur || "USD" }).format((cents||0)/100);
+    const pct = (r) => r == null ? "—" : (r*100).toFixed(2) + "%";
+    const token = new URLSearchParams(location.search).get("token") || "";
+
+    function card(label, value, note) {
+      return `<div class="card"><div class="label">${label}</div><div class="value">${value}</div>${note ? `<div class="note">${note}</div>` : ""}</div>`;
+    }
+
+    async function load() {
+      const root = document.getElementById("root");
+      try {
+        const res = await fetch("/metrics", { headers: token ? { Authorization: "Bearer " + token } : {} });
+        if (!res.ok) throw new Error("HTTP " + res.status + (res.status === 401 ? " — append ?token=YOUR_ADMIN_TOKEN to the URL" : ""));
+        const m = await res.json();
+        const cur = m.currency;
+        root.innerHTML = `
+          <div class="grid">
+            ${card("Net revenue", fmtMoney(m.revenue.net_cents, cur), "gross − refunds")}
+            ${card("Gross revenue", fmtMoney(m.revenue.gross_cents, cur))}
+            ${card("Refunds", fmtMoney(m.revenue.refunds_cents, cur), `${m.orders.refunds_count} of ${m.orders.count} orders · ${pct(m.orders.refund_rate)}`)}
+            ${card("Orders", m.orders.count)}
+            ${card("ARPU", fmtMoney(m.arpu_cents, cur), "net ÷ buyers")}
+            ${card("Free → Paid", pct(m.funnel.free_to_paid_rate), m.funnel.free_to_paid_note || `${m.funnel.paid_orders} paid / ${m.funnel.store_installs} installs`)}
+            ${card("Licenses issued", m.licenses.issued, `${m.licenses.active} active · ${m.licenses.active_instances} instances`)}
+          </div>
+          <p class="foot">${m.traceability.event_count} billing events · last ${m.traceability.last_event_at || "—"} · generated ${m.generated_at}</p>`;
+      } catch (e) {
+        root.innerHTML = `<div class="err">${e.message}</div>`;
+      }
+    }
+    load();
+    setInterval(load, 15000);
+  </script>
+</body>
+</html>
