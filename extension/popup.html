@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="header">
+    <img src="icon48.png" alt="" class="logo">
+    <span class="title">Browser Control MCP</span>
+  </div>
+
+  <div class="status-row">
+    <span class="label">Server</span>
+    <span id="connection-status" class="badge disconnected">Disconnected</span>
+  </div>
+
+  <div id="server-help" class="help" hidden>
+    <p class="help-title">Can't reach the local MCP server yet.</p>
+    <p>If Claude Code isn't running, start the MCP server in your terminal:</p>
+    <pre class="help-cmd">npx -y browser-control-mcp</pre>
+    <p>It connects automatically once the server is reachable — no reinstall needed.</p>
+    <button id="retry-btn" class="btn secondary">Retry connection</button>
+    <a class="help-link" href="https://github.com/shoyu-ramen/browser-control-mcp#readme" target="_blank" rel="noopener">Setup guide →</a>
+  </div>
+
+  <div class="status-row">
+    <span class="label">License</span>
+    <span id="license-status" class="badge">Loading…</span>
+  </div>
+
+  <div id="tier-note" class="help" hidden></div>
+
+  <div id="key-section" class="section" hidden>
+    <input id="key-input" type="text" placeholder="Paste license key" spellcheck="false" autocomplete="off">
+    <button id="activate-btn" class="btn primary">Activate</button>
+    <div id="key-error" class="error" hidden></div>
+  </div>
+
+  <div id="licensed-section" class="section" hidden>
+    <div class="licensed-key" id="licensed-key"></div>
+    <button id="deactivate-btn" class="btn secondary">Deactivate</button>
+  </div>
+
+  <div id="buy-section" class="section" hidden>
+    <button id="buy-btn" class="btn accent">Buy License — $9.99</button>
+  </div>
+
+  <script src="license.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
