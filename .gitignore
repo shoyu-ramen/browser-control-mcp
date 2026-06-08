@@ -3,7 +3,6 @@ node_modules/
 *.log
 .playwright-mcp/
 mcp-server/data/
-extension/
 dist/
 .credentials
 site/
