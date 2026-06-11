@@ -6,17 +6,25 @@
 // enough of the API surface that server.js touches at import time
 // (`new WebSocketServer({...})` + `.on(...)`) without opening a socket.
 //
-// No connection is ever emitted, so the server's `extensionSocket` stays null
-// and every sendCommand() rejects with "extension not connected" — which is
-// exactly the offline behavior we want for tool-surface introspection.
+// By default no connection is emitted, so the server's `extensionSocket` stays
+// null and every sendCommand() rejects with "extension not connected" — exactly
+// the offline behavior we want for tool-surface introspection. The integration
+// test opts in to a connection by emitting one itself (see WS_REGISTRY below).
 
 import { EventEmitter } from "node:events";
+
+// Shared registry so a test can reach the WebSocketServer instance that
+// server.js constructed at import time (same resolved module URL => same
+// object — the trick live-registry.mjs also uses). The integration test grabs
+// it to emit a synthetic "connection" with a mock extension socket.
+export const WS_REGISTRY = { servers: [] };
 
 export class WebSocketServer extends EventEmitter {
   constructor(_options) {
     super();
     this.options = _options || {};
     this.clients = new Set();
+    WS_REGISTRY.servers.push(this);
   }
   close(cb) {
     if (typeof cb === "function") cb();
