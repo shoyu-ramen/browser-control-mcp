@@ -44,6 +44,19 @@ export function computeMetrics(events, storeStats = {}) {
 
   const recordedTimes = events.map((e) => e.recorded_at).filter(Boolean).sort();
 
+  // Proxy-side license actions (Phase 1). Validations are daily-deduped per
+  // hashed key ref at ingest, so distinct_validated_keys ≈ installs actually
+  // running with a key — the revenue-leakage check against licenses issued.
+  const actions = events.filter((e) => e.kind === "license_action");
+  const validated = actions.filter((a) => a.type === "license_validated");
+  const licenseProxy = {
+    activations: actions.filter((a) => a.type === "license_activate").length,
+    deactivations: actions.filter((a) => a.type === "license_deactivate").length,
+    validation_days: validated.length,
+    distinct_validated_keys: new Set(validated.map((a) => a.license_ref)).size,
+    invalid_validation_days: validated.filter((a) => a.valid === false).length,
+  };
+
   return {
     generated_at: new Date().toISOString(),
     currency,
@@ -62,6 +75,7 @@ export function computeMetrics(events, storeStats = {}) {
       active: activeLicenses,
       active_instances: activeInstances,
     },
+    license_proxy: licenseProxy,
     funnel: {
       store_installs: storeInstalls,
       paid_orders: ordersCount,

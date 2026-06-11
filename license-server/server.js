@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { config, warnConfig } from "./lib/config.js";
 import * as store from "./lib/store.js";
 import { verifySignature } from "./lib/signature.js";
-import { normalizeEvent, forwardLicenseAction } from "./lib/lemonsqueezy.js";
+import { normalizeEvent, forwardLicenseAction, deriveEntitlement } from "./lib/lemonsqueezy.js";
 import { computeMetrics } from "./lib/metrics.js";
 
 const PUBLIC_DIR = fileURLToPath(new URL("./public/", import.meta.url));
@@ -77,7 +77,10 @@ export const server = http.createServer(async (req, res) => {
       return send(res, 200, { ok: true, recorded: !!evt, type: payload?.meta?.event_name || null });
     }
 
-    // ── License-validation proxy (DORMANT in Phase 0; wired in Phase 1) ───────
+    // ── License-validation proxy (Phase 1: the entitlement authority) ─────────
+    // Mirrors LemonSqueezy's /v1/licenses/* paths so clients only swap the base
+    // URL. Every response carries a derived `entitlement` {tier, seats,
+    // grace_until} — what the extension actually reads.
     if (req.method === "POST" && /^\/v1\/licenses\/(activate|validate|deactivate)$/.test(url.pathname)) {
       const action = url.pathname.split("/").pop();
       const raw = await readRaw(req);
@@ -88,6 +91,9 @@ export const server = http.createServer(async (req, res) => {
         return send(res, 400, { error: "invalid json" });
       }
       const result = await forwardLicenseAction(action, body);
+      const entitlement = deriveEntitlement(action, result.status, result.json, {
+        graceHours: config.graceHours,
+      });
       if (result.status < 400 && (action === "activate" || action === "deactivate")) {
         await store.appendEvent({
           kind: "license_action",
@@ -98,7 +104,27 @@ export const server = http.createServer(async (req, res) => {
           occurred_at: new Date().toISOString(),
         });
       }
-      return send(res, result.status, result.json);
+      // Validations are the revenue-leakage denominator (validated keys vs
+      // orders), recorded at most once per key per day so the append-only log
+      // grows by install count, not by polling cadence. Failed validations are
+      // recorded too (key sharing / post-refund use shows up here).
+      if (action === "validate" && result.status !== 502) {
+        const ref = refOf(body.license_key);
+        const day = new Date().toISOString().slice(0, 10);
+        const dedupeKey = `license_validated:${ref}:${day}`;
+        if (ref && !store.seenDedupe(dedupeKey)) {
+          await store.appendEvent({
+            kind: "license_action",
+            type: "license_validated",
+            source: "proxy",
+            dedupe_key: dedupeKey,
+            license_ref: ref,
+            valid: result.json?.valid === true,
+            occurred_at: new Date().toISOString(),
+          });
+        }
+      }
+      return send(res, result.status, { ...result.json, entitlement });
     }
 
     // ── Metrics (admin-guarded) ──────────────────────────────────────────────

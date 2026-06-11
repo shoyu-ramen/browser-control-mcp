@@ -8,6 +8,9 @@ export const config = {
   signingSecret: process.env.LEMONSQUEEZY_SIGNING_SECRET || "",
   apiKey: process.env.LEMONSQUEEZY_API_KEY || "",
   adminToken: process.env.ADMIN_TOKEN || "",
+  // Bounded offline grace for clients: how long a validated entitlement may be
+  // trusted without revalidation before degrading to the free tier.
+  graceHours: parseInt(process.env.LICENSE_GRACE_HOURS || "72", 10),
 };
 
 // Emit fail-closed warnings on boot so a misconfigured deploy is obvious.
