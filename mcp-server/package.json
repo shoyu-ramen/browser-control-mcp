@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node --import ./test/register-loader.mjs --test test/*.test.js"
+    "test": "node --import ./test/register-loader.mjs --test test/*.test.js",
+    "test:coverage": "node --import ./test/register-loader.mjs --test --experimental-test-coverage test/*.test.js"
   },
   "keywords": [
     "mcp",

@@ -23,12 +23,34 @@ export class StdioServerTransport {
     this.onerror = undefined;
     this._started = false;
     this._tools = null;
+    // Generic in-flight client requests keyed by JSON-RPC id (used by the
+    // integration test's request() helper). Ids start at 100 to stay clear of
+    // the handshake ids (1 = initialize, 2 = tools/list).
+    this._nextId = 100;
+    this._pending = new Map();
     // A promise the introspector awaits: resolves once tools/list returns.
     this.ready = new Promise((resolve, reject) => {
       this._resolveReady = resolve;
       this._rejectReady = reject;
     });
     LIVE_REGISTRY.transport = this;
+  }
+
+  // Issue an arbitrary JSON-RPC request the same way a real client would and
+  // resolve with its `result` (or reject with its `error`). Lets the
+  // integration test drive `tools/call` through the genuine request handlers.
+  request(method, params = {}) {
+    if (typeof this.onmessage !== "function") {
+      return Promise.reject(
+        new Error("transport.onmessage not wired — call after the server connects")
+      );
+    }
+    const id = ++this._nextId;
+    const p = new Promise((resolve, reject) => {
+      this._pending.set(id, { resolve, reject });
+    });
+    this._deliver({ jsonrpc: "2.0", id, method, params });
+    return p;
   }
 
   async start() {
@@ -77,6 +99,16 @@ export class StdioServerTransport {
     }
     if (message && message.id === 2 && message.error) {
       this._rejectReady(new Error("tools/list errored: " + JSON.stringify(message.error)));
+    }
+    // Resolve/reject any generic request() awaiting this id.
+    if (message && this._pending.has(message.id)) {
+      const { resolve, reject } = this._pending.get(message.id);
+      this._pending.delete(message.id);
+      if (message.error) {
+        reject(new Error("request errored: " + JSON.stringify(message.error)));
+      } else {
+        resolve(message.result);
+      }
     }
   }
 
