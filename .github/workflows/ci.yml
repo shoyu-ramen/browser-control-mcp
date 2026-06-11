@@ -37,6 +37,24 @@ jobs:
       - name: Run clean-core + behavioral test suite
         run: npm test
 
+  license-server:
+    name: license-server tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: license-server
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      # Zero-dependency service: no install step, the suite is stdlib-only.
+      - name: Run license-server suite
+        run: npm test
+
   artifact:
     name: shipped-zip integrity
     runs-on: ubuntu-latest
