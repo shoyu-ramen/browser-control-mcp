@@ -6,8 +6,12 @@
 // directly, so the popup needs no separate update.
 const PURCHASE_URL = "https://browser-control-mcp.lemonsqueezy.com/checkout/buy/920548b5-6f48-458a-874e-7871048f334d";
 
-const LS_API = "https://api.lemonsqueezy.com/v1/licenses";
-const TRIAL_DAYS = 7;
+// License calls go through our license service (which proxies LemonSqueezy and
+// answers with a derived entitlement {tier, seats, grace_until}). Disclosed in
+// the privacy policy: the license key — and nothing else — is sent to our
+// license service and the payment provider for validation.
+const LICENSE_API = "https://browser-control-license-production.up.railway.app/v1/licenses";
+
 const REVALIDATE_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ── Storage helpers ───────────────────────────────────────────────────────
@@ -25,35 +29,20 @@ async function clearLicenseData() {
   await chrome.storage.sync.remove("license");
 }
 
-async function getTrialStart() {
-  const result = await chrome.storage.local.get("trialStart");
-  return result.trialStart || null;
-}
+// ── License service API ──────────────────────────────────────────────────
 
-async function setTrialStart(timestamp) {
-  await chrome.storage.local.set({ trialStart: timestamp });
-}
-
-// ── Trial ─────────────────────────────────────────────────────────────────
-
-function trialDaysRemaining(trialStart) {
-  if (!trialStart) return 0;
-  const elapsed = Date.now() - trialStart;
-  const remaining = TRIAL_DAYS - elapsed / (24 * 60 * 60 * 1000);
-  return Math.max(0, Math.ceil(remaining));
-}
-
-async function initTrial() {
-  const existing = await getTrialStart();
-  if (!existing) {
-    await setTrialStart(Date.now());
+// Entitlement is server-derived; this fallback only covers a response from a
+// pre-entitlement server build (or LS directly): valid key → pro, else free.
+function entitlementOf(data) {
+  if (data.entitlement && (data.entitlement.tier === "pro" || data.entitlement.tier === "free")) {
+    return data.entitlement;
   }
+  const ok = data.valid === true || data.activated === true;
+  return { tier: ok ? "pro" : "free", seats: ok ? 1 : 0, grace_until: null };
 }
-
-// ── LemonSqueezy API ─────────────────────────────────────────────────────
 
 async function activateLicense(licenseKey) {
-  const resp = await fetch(`${LS_API}/activate`, {
+  const resp = await fetch(`${LICENSE_API}/activate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -62,44 +51,72 @@ async function activateLicense(licenseKey) {
     }),
   });
   const data = await resp.json();
-  if (!data.valid) {
+  // LemonSqueezy answers activate with `activated` (validate answers `valid`);
+  // our proxy normalizes both into entitlement, but stay defensive.
+  const ok = data.activated === true || data.valid === true;
+  if (!ok) {
     return { success: false, error: data.error || "Invalid license key" };
   }
-  const stored = {
+  const ent = entitlementOf(data);
+  await setLicenseData({
     key: licenseKey,
     instanceId: data.instance?.id || null,
     status: "active",
+    tier: ent.tier,
+    seats: ent.seats,
+    graceUntil: ent.grace_until,
     validatedAt: Date.now(),
-  };
-  await setLicenseData(stored);
+  });
   return { success: true };
 }
 
+// Returns { tier: "pro"|"free", status, offline? }. Network/server failures are
+// NOT a verdict on the key: within the bounded grace window (server-issued
+// grace_until, default 72h) the cached tier holds; past it, free tier. A
+// definitive valid:false (revoked/refunded key) downgrades immediately.
 async function validateLicense(force) {
   const lic = await getLicenseData();
-  if (!lic || !lic.key) return { valid: false, reason: "no_key" };
+  if (!lic || !lic.key) return { tier: "free", status: "no_key" };
 
-  if (!force && lic.validatedAt && Date.now() - lic.validatedAt < REVALIDATE_INTERVAL_MS) {
-    return { valid: lic.status === "active", cached: true };
+  const fresh =
+    !force && lic.validatedAt && Date.now() - lic.validatedAt < REVALIDATE_INTERVAL_MS;
+  if (fresh && lic.status === "active") {
+    return { tier: lic.tier || "pro", status: "licensed", cached: true };
   }
 
   try {
     const body = { license_key: lic.key };
     if (lic.instanceId) body.instance_id = lic.instanceId;
 
-    const resp = await fetch(`${LS_API}/validate`, {
+    const resp = await fetch(`${LICENSE_API}/validate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+    if (resp.status >= 500) throw new Error(`license service ${resp.status}`);
     const data = await resp.json();
-    lic.status = data.valid ? "active" : "invalid";
-    lic.validatedAt = Date.now();
-    await setLicenseData(lic);
-    return { valid: data.valid, cached: false };
+
+    const ent = entitlementOf(data);
+    const verdictValid = data.valid === true;
+    await setLicenseData({
+      ...lic,
+      status: verdictValid ? "active" : "invalid",
+      tier: ent.tier,
+      seats: ent.seats,
+      graceUntil: verdictValid ? ent.grace_until : null,
+      validatedAt: Date.now(),
+    });
+    return verdictValid
+      ? { tier: ent.tier, status: "licensed" }
+      : { tier: "free", status: "invalid_key" };
   } catch {
-    // Network error — trust the cached status for now
-    return { valid: lic.status === "active", cached: true, offline: true };
+    // Offline / service unreachable — bounded grace, not trust-forever.
+    const inGrace =
+      lic.status === "active" && lic.graceUntil && Date.now() < Date.parse(lic.graceUntil);
+    if (inGrace) {
+      return { tier: lic.tier || "pro", status: "licensed", offline: true };
+    }
+    return { tier: "free", status: "grace_expired", offline: true };
   }
 }
 
@@ -110,7 +127,7 @@ async function deactivateLicense() {
   try {
     const body = { license_key: lic.key };
     if (lic.instanceId) body.instance_id = lic.instanceId;
-    await fetch(`${LS_API}/deactivate`, {
+    await fetch(`${LICENSE_API}/deactivate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -121,53 +138,28 @@ async function deactivateLicense() {
   await clearLicenseData();
 }
 
-// ── Premium gating ─────────────────────────────────────────────────────────
-// Commands that require an active license once the trial ends. Anything NOT in
-// this list stays usable on the free tier, so a user whose trial expired (or
-// whose payment was declined) is never fully locked out — the old behaviour
-// hard-blocked every command and dead-ended on a Buy button that could fail.
-//
-// This list is the single monetization knob. It ships EMPTY (free tier == full
-// access) on purpose: turning on enforcement, and deciding exactly which
-// commands are premium, is a deliberate product/revenue decision made in ONE
-// place — not a silent default baked in here. Populate with command names
-// (e.g. "execute_js", "fill_field", "click_element") to gate them.
-const PREMIUM_COMMANDS = [];
-
-function isPremiumCommand(command) {
-  return PREMIUM_COMMANDS.includes(command);
-}
-
 // ── Main access check ─────────────────────────────────────────────────────
-// Returns { allowed, status, tier, ... }. `tier` is "full" (licensed or active
-// trial) or "free" (trial ended / key lapsed). Access is never hard-denied here
-// anymore; per-command gating happens in background.js via isPremiumCommand().
+// Freemium: access is never hard-denied. tier is "pro" (valid license, or
+// within the offline grace window) or "free" (everyone else). Per-tool Pro
+// gating happens in the MCP server's registry (lib/mcp.js), which reads this
+// tier via the get_license_status command — that registry list is the single
+// monetization knob.
 
 async function checkAccess() {
-  const lic = await getLicenseData();
-  if (lic && lic.key) {
-    const v = await validateLicense(false);
-    if (v.valid) return { allowed: true, status: "licensed", tier: "full" };
-    // Key present but invalid/revoked: degrade to the free tier instead of
-    // bricking the extension (a lapsed key should not be a dead-end).
-    return {
-      allowed: true,
-      status: "invalid_key",
-      tier: "free",
-      notice: "Your license key is invalid or revoked — running on the free tier.",
-    };
+  const v = await validateLicense(false);
+  if (v.tier === "pro") {
+    return { allowed: true, status: v.status, tier: "pro", offline: !!v.offline };
   }
-
-  const trialStart = await getTrialStart();
-  const days = trialDaysRemaining(trialStart);
-  if (days > 0) return { allowed: true, status: "trial", tier: "full", daysRemaining: days };
-
-  // Trial over: free tier, never a hard wall.
+  const notices = {
+    invalid_key: "Your license key is invalid or revoked — running on the free tier.",
+    grace_expired:
+      "Couldn't revalidate your license (offline too long) — running on the free tier until the license service is reachable.",
+  };
   return {
     allowed: true,
-    status: "expired",
+    status: v.status,
     tier: "free",
-    notice: "Your 7-day trial has ended — running on the free tier.",
+    ...(notices[v.status] ? { notice: notices[v.status] } : {}),
   };
 }
 
@@ -175,14 +167,9 @@ async function checkAccess() {
 
 async function getLicenseStatus() {
   const lic = await getLicenseData();
-  const trialStart = await getTrialStart();
-  const days = trialDaysRemaining(trialStart);
-
-  if (lic && lic.key && lic.status === "active") {
-    return { status: "licensed", key: lic.key };
+  const v = await validateLicense(false);
+  if (v.tier === "pro") {
+    return { status: "pro", key: lic?.key || "", offline: !!v.offline };
   }
-  if (days > 0) {
-    return { status: "trial", daysRemaining: days };
-  }
-  return { status: "expired" };
+  return { status: "free", reason: v.status };
 }

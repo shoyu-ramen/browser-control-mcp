@@ -159,14 +159,14 @@ Rebuild `dist/` via `build.sh`.
 | Rank | Item | Primary metric | Phase | Effort |
 |---|---|---|---|---|
 | 1 | A1/A2 License-metrics service + dashboard | enables all | 0 | M ✅ |
-| 2 | F2/B3 License hardening (plug leakage) | leakage → net rev | 1 | M |
-| 3 | D/F1 Freemium split + upgrade moments | Free→Paid | 1 | M |
+| 2 | F2/B3 License hardening (plug leakage) | leakage → net rev | 1 | M ✅ 2026-06-11: entitlement authority live on Railway; bounded 72h grace replaces trust-forever |
+| 3 | D/F1 Freemium split + upgrade moments | Free→Paid | 1 | M ✅ 2026-06-11: trial removed; 47-tool Pro gate at lib/mcp.js; public site/store copy flip still runbook-gated |
 | 4 | F3 Multi-seat / site licenses | ARPU | 2 | M |
 | 5 | F4 Onboarding (fix Disconnected) | activation→conv | 2 | S–M |
-| 6 | B1 `server.js` modular refactor (gate seam) | velocity/enabler | 1 | L |
+| 6 | B1 `server.js` modular refactor (gate seam) | velocity/enabler | 1 | L ✅ 2026-06-11: 7 modules, identical 138-tool surface |
 | 7 | F5 Recipe library | pricing power | 3 | M |
-| 8 | B2 Reconcile 138/139 count | traceability | 1 | S |
-| 9 | B4 Test gate | protects freeze | 1 | S |
+| 8 | B2 Reconcile 138/139 count | traceability | 1 | S ✅ (138 everywhere — LAUNCH.md, fixtures, live surface) |
+| 9 | B4 Test gate | protects freeze | 1 | S ✅ 2026-06-11: integration+messaging+gate suites, CI on Node 18/20/22 |
 | — | Future SKUs (scheduled runs, macro v2.2) | expansion | gated | — |
 
 ## 9. Honest constraints

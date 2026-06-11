@@ -44,9 +44,8 @@ body {
 .badge.connected { background: #0d3b2e; color: #34d399; }
 .badge.connecting { background: #2e2a0d; color: #fbbf24; }
 .badge.disconnected { background: #3b1c1c; color: #f87171; }
-.badge.trial { background: #2e2a0d; color: #fbbf24; }
+.badge.free { background: #2e2a0d; color: #fbbf24; }
 .badge.licensed { background: #0d3b2e; color: #34d399; }
-.badge.expired { background: #3b1c1c; color: #f87171; }
 
 .section {
   margin-top: 14px;

@@ -10,8 +10,9 @@ export const SAFE_PREFIXES = ["browser_", "devtools_", "keyboard_", "dev_"];
 // without a deliberate, documented decision. (A 2026-05-31 re-land briefly
 // pushed this to 153 by re-adding the unreviewed macro/profile/dom-watch/extract
 // feature; it was treated as a freeze breach of the v1.0 launch tree and
-// restored to the frozen clean-core 138. Any v2.2.0 macro work belongs on an
-// isolated branch, never main.)
+// restored to the frozen clean-core 138. Any macro/profile work belongs on an
+// isolated branch, never main — it is NOT the 2.2.0 freemium release, which
+// changed zero tools.)
 export const CLEAN_CORE_MAX_TOOLS = 138;
 
 // The LOCKED safe-core count, pinned EXACTLY so any surface change fails loudly.
@@ -23,8 +24,9 @@ export const CLEAN_CORE_MAX_TOOLS = 138;
 // → 138 (`keyboard_record` cut as a keylogger primitive — unsafe alongside the
 // debugger + <all_urls> permissions). A 2026-05-31 re-land briefly bumped this to
 // 153 by re-adding the unreviewed macro/profile/dom-watch/extract feature; it was
-// treated as a freeze breach and restored to 138. That feature is deferred to an
-// isolated v2.2.0 branch and must not re-enter main.
+// treated as a freeze breach and restored to 138. That feature stays deferred on
+// an isolated branch and must not re-enter main. (The 2.2.0 freemium release
+// gates handlers by tier but registers the identical 138-tool surface.)
 export const EXPECTED_TOOL_COUNT = 138;
 
 // Representative names from every removed/blocked family (precedent #1). Each

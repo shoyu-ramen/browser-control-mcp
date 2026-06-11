@@ -45,10 +45,7 @@ async function recreateOffscreen() {
 }
 
 chrome.runtime.onStartup.addListener(ensureOffscreen);
-chrome.runtime.onInstalled.addListener(async (details) => {
-  await ensureOffscreen();
-  if (details.reason === "install") await initTrial();
-});
+chrome.runtime.onInstalled.addListener(() => ensureOffscreen());
 
 chrome.alarms.create("keepOffscreenAlive", { periodInMinutes: 0.5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -147,20 +144,16 @@ chrome.debugger.onDetach.addListener(function (source) {
 async function handleCommand(msg) {
   const { command, params } = msg;
 
-  const access = await checkAccess();
-  // Only premium commands are gated once the trial ends — everything else stays
-  // usable on the free tier, so an expired trial or a declined payment never
-  // fully locks the user out (the old hard block was a dead-end). PREMIUM_COMMANDS
-  // ships empty, so enabling enforcement is a deliberate, one-place decision.
-  if (access.tier === "free" && isPremiumCommand(command)) {
+  // The extension is the entitlement holder (license + bounded offline grace
+  // live in license.js); per-tool Pro gating happens in the MCP server's
+  // registry, which reads the tier through this command. Commands themselves
+  // are never blocked here — free tier means fewer MCP tools, not a broken
+  // extension.
+  if (command === "get_license_status") {
+    const access = await checkAccess();
     return {
-      success: false,
-      error:
-        (access.notice ? access.notice + " " : "") +
-        `"${command}" requires an active license. Activate a key or buy one in the extension popup.`,
-      licenseStatus: access.status,
-      tier: access.tier,
-      purchaseUrl: PURCHASE_URL,
+      success: true,
+      data: { tier: access.tier, status: access.status, ...(access.notice ? { notice: access.notice } : {}) },
     };
   }
 
