@@ -84,16 +84,54 @@ export function normalizeEvent(payload) {
   }
 }
 
-// Dormant in Phase 0 (the extension still calls LemonSqueezy directly). Wired in
-// Phase 1 under the go/no-go gate so activations are captured server-side and the
-// offline-forever leak is closed. License endpoints are public (no API key needed).
-export async function forwardLicenseAction(action, body) {
+// Phase-1 wired: the extension validates through this proxy, so activations are
+// captured server-side and the offline-forever leak is closed (clients get a
+// bounded grace window instead of trust-cache-forever). License endpoints are
+// public upstream (no API key needed). fetchImpl is injectable for tests.
+export async function forwardLicenseAction(action, body, fetchImpl = fetch) {
   const url = `https://api.lemonsqueezy.com/v1/licenses/${action}`;
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(body),
-  });
-  const json = await resp.json().catch(() => ({}));
-  return { status: resp.status, json };
+  try {
+    const resp = await fetchImpl(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json = await resp.json().catch(() => ({}));
+    return { status: resp.status, json };
+  } catch (e) {
+    // Upstream unreachable. 502 tells the client "not a verdict on your key" —
+    // its cached entitlement + grace window decide what happens next.
+    return { status: 502, json: { error: "license upstream unreachable", detail: String((e && e.message) || e) } };
+  }
+}
+
+// ── Entitlement (the single authority clients read) ─────────────────────────
+// Derived from LemonSqueezy's response; forward-compatible with multi-seat.
+// LS quirk handled here so clients never need to know it: validate answers with
+// `valid`, activate answers with `activated` (and not always `valid`).
+//
+//   tier        "pro" | "free"
+//   seats       activation_limit for a valid key (null limit = unlimited), 0 free
+//   grace_until ISO timestamp until which a client may trust this entitlement
+//               offline; past it, the client degrades to the free tier.
+export function deriveEntitlement(action, status, json, opts = {}) {
+  const now = opts.now ?? Date.now();
+  const graceHours = opts.graceHours ?? 72;
+
+  if (action === "deactivate") {
+    return { tier: "free", seats: 0, grace_until: null };
+  }
+
+  const ok =
+    status < 400 &&
+    (json?.valid === true || (action === "activate" && json?.activated === true));
+
+  if (!ok) return { tier: "free", seats: 0, grace_until: null };
+
+  const limit = json?.license_key?.activation_limit;
+  return {
+    tier: "pro",
+    seats: limit == null ? null : Number(limit) || 1,
+    grace_until: new Date(now + graceHours * 60 * 60 * 1000).toISOString(),
+  };
 }

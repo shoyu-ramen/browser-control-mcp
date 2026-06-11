@@ -8,17 +8,24 @@ funnel.
 
 - Ingests **LemonSqueezy webhooks** (HMAC-verified) → append-only event log.
 - Exposes **`/metrics`** (JSON) and a **`/dashboard`** rendering the revenue funnel.
-- Ships a **license-validation proxy** (`/v1/licenses/{activate,validate,deactivate}`)
-  that is **dormant in Phase 0** — wired to the extension in Phase 1 (gated) to capture
-  activations server-side and close the offline-forever license leak.
+- Serves the **license-validation proxy** (`/v1/licenses/{activate,validate,deactivate}`)
+  — Phase-1 wired: the extension validates through here. Every response carries a
+  derived **entitlement** `{tier: "pro"|"free", seats, grace_until}`; `grace_until`
+  is the bounded offline window (default 72h, `LICENSE_GRACE_HOURS`) that replaces
+  the old trust-cache-forever client behavior. Activations and validations are
+  recorded as billing events (validations daily-deduped per hashed key ref) — the
+  revenue-leakage check (distinct validated keys vs licenses issued) in `/metrics`.
 
 ## Privacy boundary (read this)
 
 This service handles **billing and licensing data only** — orders, refunds, license
 keys, amounts, timestamps. It **never** receives browsing data, page content, or
-per-feature usage from the extension. That is what keeps the published privacy policy
-("no data collected; localhost-only; only the license key goes to the payment
-provider") **true as written**.
+per-feature usage from the extension. The published privacy copy discloses that the
+license key is sent for validation; with Phase-1 wiring that flow is **extension →
+this service → LemonSqueezy** (the raw key is forwarded upstream, never persisted
+here — events store a one-way SHA-256 ref). The privacy policy and Chrome Web Store
+data-use disclosure must name this service alongside the payment provider — that
+copy update ships with the Phase-1 extension change, before first store submission.
 
 - The **Free→Paid** denominator (active free installs) comes from **Chrome Web Store
   stats**, entered via `POST /admin/store-stats` — **not** from a client install-ping.
@@ -55,7 +62,8 @@ npm test
 
 See `.env.example`. `LEMONSQUEEZY_SIGNING_SECRET` and `ADMIN_TOKEN` are both
 **fail-closed**: without the secret, webhooks are rejected; without the admin token,
-`/metrics`, `/dashboard`, and `/admin/*` are disabled.
+`/metrics`, `/dashboard`, and `/admin/*` are disabled. `LICENSE_GRACE_HOURS`
+(default 72) bounds how long clients may trust a validated entitlement offline.
 
 ## Endpoints
 
@@ -66,7 +74,7 @@ See `.env.example`. `LEMONSQUEEZY_SIGNING_SECRET` and `ADMIN_TOKEN` are both
 | GET | `/metrics` | Bearer admin | revenue funnel JSON |
 | GET | `/dashboard` | `?token=` admin | one-page dashboard |
 | POST | `/admin/store-stats` | Bearer admin | set Web Store install counts |
-| POST | `/v1/licenses/{activate,validate,deactivate}` | — | LS proxy (dormant) |
+| POST | `/v1/licenses/{activate,validate,deactivate}` | — | LS proxy + entitlement `{tier, seats, grace_until}` |
 
 ## Deploy (gated — hand back to the owner)
 
@@ -81,12 +89,14 @@ Not deployed by this change. When ready:
    `license_key_created`, `license_key_updated`.
 4. Backfill historical orders if desired (LS API, needs `LEMONSQUEEZY_API_KEY`).
 
-## Phase 1 wiring (separate, gated change)
+## Phase 1 wiring (client side)
 
-Point `extension/license.js` at `/v1/licenses/*` instead of LemonSqueezy directly so
-activations are captured and entitlement (`free|pro|seats`) is server-authoritative.
-This touches the shipped extension and the data-flow disclosure, so it goes through
-`../.jury/go-no-go.md` before release.
+The server side is live (entitlement + event recording, above). The client side —
+`extension/license.js` pointing at `/v1/licenses/*` instead of LemonSqueezy
+directly — ships with the freemium extension change. It touches the shipped
+extension and the data-flow disclosure, so the outward-facing pieces (privacy
+copy, store data-use disclosure) run through the `LAUNCH.md` runbook before
+release.
 
 > ⚠️ LemonSqueezy payload field names in `lib/lemonsqueezy.js` reflect the documented
 > schema at build time and are parsed defensively. Re-verify against current LS docs
