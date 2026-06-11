@@ -128,16 +128,16 @@ test("npm pack: file list stays within the clean-core allowlist", () => {
   );
 });
 
-test("dist zip: extension package contains no sensitive modules", () => {
+test("dist zip: extension package contains no sensitive modules", (t) => {
   if (!existsSync(DIST_ZIP)) {
     // The zip is a build artifact; from a fresh checkout it may be absent.
     // Treat as a soft skip rather than a failure so `npm test` runs anywhere.
-    test.skip(`${basename(DIST_ZIP)} not present — skipping zip file-list check`);
+    t.skip(`${basename(DIST_ZIP)} not present — skipping zip file-list check`);
     return;
   }
   const names = zipEntryNames(DIST_ZIP);
   if (names === null) {
-    test.skip("neither unzip nor zipinfo available — skipping zip file-list check");
+    t.skip("neither unzip nor zipinfo available — skipping zip file-list check");
     return;
   }
   assert.ok(names.length > 0, "dist zip appears empty");
@@ -150,14 +150,14 @@ test("dist zip: extension package contains no sensitive modules", () => {
   );
 });
 
-test("dist zip: contains exactly the expected 11 entries", () => {
+test("dist zip: contains exactly the expected 11 entries", (t) => {
   if (!existsSync(DIST_ZIP)) {
-    test.skip(`${basename(DIST_ZIP)} not present — skipping zip entry-set check`);
+    t.skip(`${basename(DIST_ZIP)} not present — skipping zip entry-set check`);
     return;
   }
   const names = zipEntryNames(DIST_ZIP);
   if (names === null) {
-    test.skip("neither unzip nor zipinfo available — skipping zip entry-set check");
+    t.skip("neither unzip nor zipinfo available — skipping zip entry-set check");
     return;
   }
   assert.deepEqual(
@@ -167,18 +167,18 @@ test("dist zip: contains exactly the expected 11 entries", () => {
   );
 });
 
-test("dist zip: packaged background.js is byte-identical to extension/background.js", () => {
+test("dist zip: packaged background.js is byte-identical to extension/background.js", (t) => {
   // The zip must not go stale relative to the live extension source. If the
   // extension's background.js is edited (e.g. stripping a sensitive handler or
   // a manifest-driven change), the zip MUST be rebuilt or this fails. Catches
   // a published artifact lagging the reviewed source.
   if (!existsSync(DIST_ZIP)) {
-    test.skip(`${basename(DIST_ZIP)} not present — skipping zip freshness check`);
+    t.skip(`${basename(DIST_ZIP)} not present — skipping zip freshness check`);
     return;
   }
   const extFile = join(EXTENSION_DIR, "background.js");
   if (!existsSync(extFile)) {
-    test.skip("extension/background.js not present — skipping zip freshness check");
+    t.skip("extension/background.js not present — skipping zip freshness check");
     return;
   }
   let zipped;
@@ -186,7 +186,7 @@ test("dist zip: packaged background.js is byte-identical to extension/background
     zipped = zipEntryBytes(DIST_ZIP, "background.js");
   } catch (err) {
     if (err && err.code === "ENOENT") {
-      test.skip("unzip not available — skipping zip freshness check");
+      t.skip("unzip not available — skipping zip freshness check");
       return;
     }
     throw err;
