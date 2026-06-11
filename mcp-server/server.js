@@ -17,6 +17,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const EXT_ID_FILE = join(__dirname, ".extension-id");
 
 const WS_PORT = 7225;
+const SERVER_VERSION = "2.1.0";
 let extensionSocket = null;
 let extensionId = null;
 let pendingRequests = new Map();
@@ -70,6 +71,17 @@ wss.on("connection", (socket) => {
       extensionId = msg.extensionId;
       try { writeFileSync(EXT_ID_FILE, extensionId); } catch {}
       process.stderr.write(`[MCP] Extension ID: ${extensionId}\n`);
+      if (msg.version && msg.version !== SERVER_VERSION) {
+        process.stderr.write(
+          `[MCP] WARNING: extension version ${msg.version} does not match server ${SERVER_VERSION}. ` +
+            `The loaded Chrome extension may be stale — rebuild and reload it (chrome://extensions → Reload) ` +
+            `or some tools may fail with "Unknown command".\n`
+        );
+      } else if (!msg.version) {
+        process.stderr.write(
+          `[MCP] WARNING: extension sent no version (pre-2.1.0 build). Reload the extension to silence this.\n`
+        );
+      }
       return;
     }
 
@@ -165,7 +177,7 @@ function formatScreenshot(result) {
 
 const server = new McpServer({
   name: "browser-control",
-  version: "2.1.0",
+  version: SERVER_VERSION,
 });
 
 // Store-compliant build: expose only core browser-automation tools.
@@ -830,7 +842,7 @@ server.tool(
           });
         } else {
           resolve({
-            content: [{ type: "text", text: "Opened chrome://extensions — check that 'Claude Code Browser Control' is enabled and has no errors" }],
+            content: [{ type: "text", text: "Opened chrome://extensions — check that 'Browser Control MCP' is enabled and has no errors" }],
           });
         }
       });
