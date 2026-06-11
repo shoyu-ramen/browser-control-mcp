@@ -83,9 +83,9 @@ function zipJsEntries() {
   return null;
 }
 
-test("extension source: no sensitive command handlers in extension/*.js", () => {
+test("extension source: no sensitive command handlers in extension/*.js", (t) => {
   if (!existsSync(EXTENSION_DIR)) {
-    test.skip("extension/ not present — skipping extension source scan");
+    t.skip("extension/ not present — skipping extension source scan");
     return;
   }
   const files = readdirSync(EXTENSION_DIR).filter((f) => f.endsWith(".js"));
@@ -104,16 +104,16 @@ test("extension source: no sensitive command handlers in extension/*.js", () => 
   );
 });
 
-test("dist zip: packaged extension JS contains no sensitive command handlers", () => {
+test("dist zip: packaged extension JS contains no sensitive command handlers", (t) => {
   // The strongest check: scan the CONTENT of the JS actually inside the
   // published zip, so a re-introduced-then-rebuilt leak is caught.
   if (!existsSync(DIST_ZIP)) {
-    test.skip(`${basename(DIST_ZIP)} not present — skipping zip content scan`);
+    t.skip(`${basename(DIST_ZIP)} not present — skipping zip content scan`);
     return;
   }
   const entries = zipJsEntries();
   if (entries === null) {
-    test.skip("neither unzip nor zipinfo available — skipping zip content scan");
+    t.skip("neither unzip nor zipinfo available — skipping zip content scan");
     return;
   }
   assert.ok(entries.length > 0, "no .js entries found inside the dist zip");
@@ -128,7 +128,7 @@ test("dist zip: packaged extension JS contains no sensitive command handlers", (
     );
   } catch (err) {
     if (err && err.code === "ENOENT") {
-      test.skip("unzip not available — skipping zip content scan");
+      t.skip("unzip not available — skipping zip content scan");
       return;
     }
     throw err;
