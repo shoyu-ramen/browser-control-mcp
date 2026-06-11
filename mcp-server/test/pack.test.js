@@ -54,6 +54,16 @@ const EXPECTED_ZIP_ENTRIES = [
 const ALLOWED_NPM_FILES = new Set([
   "package.json",
   "server.js",
+  // B1 modular split: the entrypoint plus lib/ plumbing and tools/ domain
+  // modules — together they register exactly the same clean-core surface the
+  // monolithic server.js did (guard.test.js pins the live surface).
+  "lib/mcp.js",
+  "lib/runtime.js",
+  "tools/core.js",
+  "tools/devtools.js",
+  "tools/keyboard.js",
+  "tools/dev.js",
+  "tools/extended.js",
   "messaging/event-bus.js",
   "messaging/subscriptions.js",
   "messaging/session-state.js",

@@ -32,6 +32,13 @@
   },
   "files": [
     "server.js",
+    "lib/mcp.js",
+    "lib/runtime.js",
+    "tools/core.js",
+    "tools/devtools.js",
+    "tools/keyboard.js",
+    "tools/dev.js",
+    "tools/extended.js",
     "messaging/event-bus.js",
     "messaging/subscriptions.js",
     "messaging/session-state.js",
