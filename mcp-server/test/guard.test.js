@@ -25,7 +25,10 @@ import {
 } from "./fixtures.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const SERVER_PATH = join(here, "..", "server.js");
+// B1 modular split: the registration guard lives in lib/mcp.js (the one seam
+// every server.tool(...) call flows through), so the static source checks read
+// that file rather than the thin server.js entrypoint.
+const REGISTRY_PATH = join(here, "..", "lib", "mcp.js");
 
 const matchesSafePrefix = (name) => SAFE_PREFIXES.some((p) => name.startsWith(p));
 
@@ -133,17 +136,18 @@ test("guard: live tool count has not grown past the clean-core ceiling", async (
 });
 
 // --- Static guard-presence checks: the wrapper itself must remain ---
-// server.js is concurrently maintained; these read the live file (no hard-coded
-// line numbers) and confirm the registration guard is intact and still rejects
-// every blocked family, so the guard can't be silently deleted or weakened.
+// lib/mcp.js is concurrently maintained; these read the live file (no
+// hard-coded line numbers) and confirm the registration guard is intact and
+// still rejects every blocked family, so the guard can't be silently deleted
+// or weakened.
 
 test("guard source: BLOCKED_TOOL regex exists and wraps server.tool", () => {
-  const src = readFileSync(SERVER_PATH, "utf8");
+  const src = readFileSync(REGISTRY_PATH, "utf8");
 
   assert.match(
     src,
     /const\s+BLOCKED_TOOL\s*=/,
-    "server.js must define a BLOCKED_TOOL regex"
+    "lib/mcp.js must define a BLOCKED_TOOL regex"
   );
   // The wrapper must short-circuit registration for blocked names.
   assert.match(
@@ -154,9 +158,9 @@ test("guard source: BLOCKED_TOOL regex exists and wraps server.tool", () => {
 });
 
 test("guard source: live BLOCKED_TOOL regex rejects every blocked family", () => {
-  const src = readFileSync(SERVER_PATH, "utf8");
+  const src = readFileSync(REGISTRY_PATH, "utf8");
   const m = src.match(/const\s+BLOCKED_TOOL\s*=\s*([\s\S]*?);/);
-  assert.ok(m, "could not locate the BLOCKED_TOOL regex literal in server.js");
+  assert.ok(m, "could not locate the BLOCKED_TOOL regex literal in lib/mcp.js");
 
   // Reconstruct the actual regex literal from source and verify it still
   // matches our representative blocked names. This catches a weakened regex.
