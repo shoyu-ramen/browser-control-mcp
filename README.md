@@ -1,12 +1,12 @@
 # Browser Control MCP
 
-A Chrome extension + MCP server that gives Claude Code direct control of your browser. Navigate pages, fill forms, click buttons, take screenshots, monitor network traffic, manage cookies, read the clipboard, and debug visually — all from your terminal. **Free to install, 7-day free trial, then a $9.99 one-time license.** No subscription.
+A Chrome extension + MCP server that gives Claude Code direct control of your browser. Navigate pages, fill forms, click buttons, take screenshots, monitor network traffic, manage cookies, read the clipboard, and debug visually — all from your terminal. **Free tier with the full core automation surface; Pro unlocks the developer-power tools for a $9.99 one-time license.** No subscription.
 
 ## Installation
 
 ### 1. Chrome Extension
 
-Install **Browser Control MCP** in Chrome. It runs a **7-day free trial**; after that a one-time **$9.99 license** (purchased on [our website](https://browser-control-mcp.lemonsqueezy.com) — the Chrome Web Store doesn't process payments) keeps it active.
+Install **Browser Control MCP** in Chrome. The **free tier** covers all core browsing & automation tools, forever. A one-time **$9.99 Pro license** (purchased on [our website](https://browser-control-mcp.lemonsqueezy.com) — the Chrome Web Store doesn't process payments) unlocks the developer-power surface: DevTools, test flows, network capture, PDF export, emulation overrides, multi-window, frames, and media control.
 
 > **Chrome Web Store listing is pending review.** Until it's live, install via **Load unpacked** (see [LAUNCH.md](LAUNCH.md)): unzip the build, open `chrome://extensions`, enable Developer mode, and click **Load unpacked**. The one-click store link will be added here once approved.
 

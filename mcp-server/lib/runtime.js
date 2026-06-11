@@ -14,7 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const EXT_ID_FILE = join(__dirname, "..", ".extension-id");
 
 export const WS_PORT = 7225;
-export const SERVER_VERSION = "2.1.0";
+export const SERVER_VERSION = "2.2.0";
 let extensionSocket = null;
 let extensionId = null;
 let pendingRequests = new Map();

@@ -89,26 +89,28 @@ async function refreshLicenseUI() {
   $buySection.hidden = true;
   $tierNote.hidden = true;
 
-  if (info.status === "licensed") {
-    $licenseStatus.textContent = "Active";
+  if (info.status === "pro") {
+    $licenseStatus.textContent = info.offline ? "Pro (offline)" : "Pro";
     $licenseStatus.className = "badge licensed";
     $licensedSection.hidden = false;
     const masked = info.key.slice(0, 8) + "…" + info.key.slice(-4);
     $licensedKey.textContent = masked;
-  } else if (info.status === "trial") {
-    const d = info.daysRemaining;
-    $licenseStatus.textContent = `Trial (${d} day${d !== 1 ? "s" : ""} left)`;
-    $licenseStatus.className = "badge trial";
-    $keySection.hidden = false;
-    $buySection.hidden = false;
   } else {
-    $licenseStatus.textContent = "Trial ended";
-    $licenseStatus.className = "badge expired";
+    $licenseStatus.textContent = "Free";
+    $licenseStatus.className = "badge free";
     $keySection.hidden = false;
     $buySection.hidden = false;
     $tierNote.hidden = false;
-    $tierNote.textContent =
-      "Your free trial has ended — you still have free-tier access. Activate a key or buy a license to unlock premium commands and support development.";
+    if (info.reason === "invalid_key") {
+      $tierNote.textContent =
+        "Your license key is invalid or revoked — running on the free tier. Re-activate a key to restore Pro.";
+    } else if (info.reason === "grace_expired") {
+      $tierNote.textContent =
+        "Couldn't revalidate your license — running on the free tier until the license service is reachable again.";
+    } else {
+      $tierNote.textContent =
+        "Free tier: full core browsing & automation. Pro unlocks DevTools, test flows, network capture, PDF export, emulation, and more.";
+    }
   }
 }
 
